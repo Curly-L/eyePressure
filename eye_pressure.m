@@ -223,8 +223,10 @@ end
 %% 绘图模块
 % 高斯分布集中画在一张图
 function [] = gaussianPlotAll(ori_data,fit_data,mode,originalDataFlag)
-    % ori_data低通滤波的原数据
-    % fit_data高斯拟合
+    % ori_data低通滤波的单眼横纵原数据
+    % fit_data高斯拟合的参数值
+    % mode模式选择，origin和select有什么区别？
+    % originalDataFlag是否绘制原始数据
     if nargin ==3
         originalDataFlag = false;
     end
@@ -308,8 +310,11 @@ end
 
 % 曲线均值和不确定度
 if meanGaussianPlotFlag
-    
+    for k = 1:num_eyes % 左右眼分开处理
+        [mu{k},sigma{k}] = getMuSig(msResultFit);
+    end
 end
+
 
 % 选定区间
 start_xs = cell(num_eyes,1);
