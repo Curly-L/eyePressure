@@ -240,9 +240,9 @@ function [] = gaussianPlotAll(ori_data,fit_data,mode,originalDataFlag)
         if mode == "origin"
             x = ori_data{i,1};
             y = ori_data{i,2};
-            originalDataFlag = False;
+            originalDataFlag = true; %没看懂
         elseif mode == "select"
-            x = ori_data;
+            x = ori_data{i,1};
         end
         if originalDataFlag
             plot(fitresult,x,y)
