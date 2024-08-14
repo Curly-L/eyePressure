@@ -194,6 +194,15 @@ function [dataNew] = fitData(data)
     end
 end
 
+    % 计算单眼高斯曲线的平均值和不确定度
+function [mu,sigma] =  gaussianMuSigma(fit_data)
+    dataSize = size(fit_data{1});
+    num_datas = dataSize(1);
+    mu = mean(fit_data,3);
+    stdfit = std(fit_data);
+    sigma = sqrt(stdfit/(num_datas));
+end
+
 function [start_x, end_x] = selectRegion(data)
     % 选择讨论区间：所有测量x的最大和最小值
     all_data = data{:,1};
@@ -231,6 +240,8 @@ function [] = gaussianPlotAll(ori_data,fit_data,mode,originalDataFlag)
         originalDataFlag = false;
     end
     figure;
+    xlabel("Distance(mm)");
+    ylabel("Force(mmHg)");
     dataSize = size(fit_data);
     num_tests = dataSize(1);
 
@@ -240,18 +251,24 @@ function [] = gaussianPlotAll(ori_data,fit_data,mode,originalDataFlag)
         if mode == "origin"
             x = ori_data{i,1};
             y = ori_data{i,2};
-            originalDataFlag = true; %没看懂
+            originalDataFlag = true; %没看懂,mode和originalDataFlag功能重合
         elseif mode == "select"
             x = ori_data{i,1};
         end
         if originalDataFlag
-            plot(fitresult,x,y)
+            yfit = 5*feval(fitresult, x);
+            plot(x,yfit,x,y);
         else
-            yfit = feval(fitresult, x);
+            yfit = 5*feval(fitresult, x);
             plot(x,yfit);
         end
         legend off;
     end
+end
+
+% 画单眼的高斯曲线平均值曲线和+-3sigma的曲线
+function [] = meanGaussianPlot(ori_data,fit_data,mode)
+
 end
 
 %% 主函数，程序入口
@@ -272,6 +289,7 @@ meanGaussianPlotFlag = ture;
 % 函数调用和处理
 
 % 截断处理（利用空跑数据确定可用数据范围）
+% 去除小于零的无效数据
 msResultTrunc = cell(num_tests,2);
 msResultTruncs = cell(2,1);
 for k = 1:num_eyes  % 左右眼分开处理
@@ -301,37 +319,47 @@ end
 if gaussianPlotAllFlag
     for k = 1:num_eyes
         originalDataFlag = false;% 是否显示原始数据绘图
-        mode = "origin" ;
-        gaussianPlotAll(msResultCorrects{k},msResultFits{k},mode,originalDataFlag);
+        mode = "select";
+        gaussianPlotAll(msResultCorrects{k},msResultFits{k},mode);
     end
 end
 
 %  Gaussian拟合的参数作为标准数据进行处理
 
 % 曲线均值和不确定度
+gaussianMus = zeros(2,1);
+gaussianSigmas = zeros(2,1);
+msResultFitDatas = cell(2,1);
+for k = 1:num_eyes % 左右眼分开处理，用高斯拟合的参数算曲线
+    
+    msResultFitDatas{k} = generateGaussianData(msResultFits{k},xFitDatas);
+end
 if meanGaussianPlotFlag
     for k = 1:num_eyes % 左右眼分开处理
-        [mu{k},sigma{k}] = getMuSig(msResultFit);
+        [gaussianMus(k),gaussianSigmas(k)] = gaussianMuSigma(msResultFitDatas{k});
     end
 end
 
 
-% 选定区间
-start_xs = cell(num_eyes,1);
-end_xs = cell(num_eyes,1);
-xs = cell(num_eyes,1);
-for k = 1:num_eyes % 左右眼分开处理
-    [start_xs{k}, end_xs{k}] = selectRegion(msResultCorrects{k}); % 选择曲线讨论区间
-    xs{k} = linspace(start_xs{k},end_xs{k})';
-end
-% 选定区间规范化数据（高斯数据拟合公式在对应的x区间内的矩阵）
+% % 选定区间
+% start_xs = cell(num_eyes,1);
+% end_xs = cell(num_eyes,1);
+% xs = cell(num_eyes,1);
+% for k = 1:num_eyes % 左右眼分开处理
+%     [start_xs{k}, end_xs{k}] = selectRegion(msResultCorrects{k}); % 选择曲线讨论区间
+%     xs{k} = linspace(start_xs{k},end_xs{k})';
+% end
+
+% % 选定区间规范化数据（高斯数据拟合公式在对应的x区间内的矩阵）
 % for k = 1:num_eyes % 左右眼分开处理
 %     msResultCorrects{k} = generateGaussianData(msResultFits{k},xs{k}); % 选择曲线讨论区间
 %     % 注意，这里替换了msResultCorrects的内容
 % end
-% 画Gaussian拟合的图
-for k = 1:num_eyes
-    mode = "select";
-    gaussianPlotAll(xs{k},msResultFits{k},mode);
-end
+
+
+% % 画Gaussian拟合的图
+% for k = 1:num_eyes
+%     mode = "select";
+%     gaussianPlotAll(xs{k},msResultFits{k},mode);
+% end
 
