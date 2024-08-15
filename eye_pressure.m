@@ -60,10 +60,9 @@ function [msResult] = getNoiseData(file_dir)
     end
 end
 
-function [msResult] = getEyesData(file_dir)
+function [msResult] = getEyesData(file_dir,excludeFiles)
     % 读取单个人的左眼/右眼测量数据，可以迭代搜索子文件夹
     % file_dir单人眼压数据文件路径
-    excludeFiles = {'zcx测试情况统计表.xlsx'};
     [~,filepath] = getFilesPath(file_dir, 'xlsx', excludeFiles);
     [filepathL,filepathR] = getdataLR(filepath);
     filepathL = strSort(filepathL);
@@ -82,7 +81,6 @@ function [msResult] = getEyesData(file_dir)
         end
     end
 end
-
 
 %% 文件格式预处理模块
 % 包括：文件索引预处理，文件内容预处理
@@ -113,7 +111,7 @@ end
 % 包括文件内容格式的预处理，此处暂时不需要
 
 %% 数据分析预处理模块
-% 包括求均值和标准差，高斯拟合，修正空跑误差，生成x距离坐标
+    % 包括求均值和标准差，高斯拟合，修正空跑误差，生成x距离坐标
 
 % 计算数据参数
 function [mu,sigma] = getMuSig(data)
@@ -128,8 +126,9 @@ function [fitresult ,gof] = gaussianFit(x,y)
 end
 
 % 阶段处理函数
-function [datas] = truncStartEnds(data)
+
     % 截取接触到眼皮的压力曲线，其中包含了x坐标的生成，后期需要独立并且单独处理讨论（严格步进）
+function [datas] = truncStartEnds(data)
     function  [xNew,yNew] = truncStartEnd(num)
         row = length(num);
         x= (1:row)';
@@ -166,11 +165,12 @@ function [datas] = truncStartEnds(data)
     
 end
 
-function [dataNew] = correctData(data,bias)
+
     % 主要修正空跑自身的系统误差
     % data左右眼数据
     % bias空跑数据平均值
     % 暂时的处理方案是数据-空跑数据平均值mu
+function [dataNew] = correctData(data,bias)
     dataSize = size(data); %size返回[行 列]
     dataNew = cell(dataSize);
     num_tests = dataSize(1);
@@ -180,8 +180,8 @@ function [dataNew] = correctData(data,bias)
     end
 end
 
-function [dataNew] = fitData(data)
     % 对元胞数组中的数据进行高斯拟合
+function [dataNew] = fitData(data)
     dataSize = size(data);
     dataNew = cell(dataSize);
     num_tests = dataSize(1);
@@ -203,15 +203,15 @@ function [mu,sigma] =  gaussianMuSigma(fit_data)
     sigma = sqrt(stdfit/(num_datas));
 end
 
-function [start_x, end_x] = selectRegion(data)
     % 选择讨论区间：所有测量x的最大和最小值
+function [start_x, end_x] = selectRegion(data)
     all_data = data{:,1};
     start_x = min(all_data);
     end_x = max(all_data);
 end
 
-function [dataNew] = generateGaussianData(data,x)
     % 通过拟合的高斯参数和选择区间生成矩阵
+function [dataNew] = generateGaussianData(data,x)
     dataSize = size(data);
     num_tests = dataSize(1);
     dataNew = cell(num_tests,1);
@@ -219,11 +219,11 @@ function [dataNew] = generateGaussianData(data,x)
         fitresult = data{i,1};
         yfit = feval(fitresult, x);
         dataNew{i} = yfit;
-    end    
+    end
 end
 
-function num = getOutliers(data)
     % 算保留95%的中间数据时要去掉的单边的极值曲线数量
+function num = getOutliers(data)
     dataSize = size(data);
     num_tests = dataSize(1);
     num = cell(num_tests*0.95)/2;
@@ -250,7 +250,7 @@ function [] = gaussianPlotAll(ori_data,fit_data,mode,originalDataFlag)
         fitresult = fit_data{i,1};
         if mode == "origin"
             x = ori_data{i,1};
-            y = ori_data{i,2};
+            y = 5*ori_data{i,2};
             originalDataFlag = true; %没看懂,mode和originalDataFlag功能重合
         elseif mode == "select"
             x = ori_data{i,1};
@@ -266,7 +266,6 @@ function [] = gaussianPlotAll(ori_data,fit_data,mode,originalDataFlag)
     end
 end
 
-% 画单眼的高斯曲线平均值曲线和+-3sigma的曲线
 function [] = meanGaussianPlot(ori_data,fit_data,mode)
 
 end
@@ -278,13 +277,14 @@ file_dir_noise = 'D:\蓝知医疗\测试数据\空跑';
 msResult_noise = getNoiseData(file_dir_noise);
 [mu,sigma] = getMuSig(msResult_noise); % 计算空跑平均值和标准差
 
-file_dir = 'D:\蓝知医疗\测试数据\zcxL17R17';
-msResult = getEyesData(file_dir); % 得到左右眼眼压，行-测量次数，列-被测眼睛
+file_dir = 'D:\蓝知医疗\测试数据\lffL15R12';
+excludeFiles = {'测试情况说明.xlsx'};
+msResult = getEyesData(file_dir,excludeFiles); % 得到左右眼眼压，行-测量次数，列-被测眼睛
 [num_tests,num_eyes] = size(msResult);
 
 % 初始设置
-gaussianPlotAllFlag = ture;
-meanGaussianPlotFlag = ture;
+gaussianPlotAllFlag = true;
+meanGaussianPlotFlag = true;
 
 % 函数调用和处理
 
@@ -306,7 +306,7 @@ for k = 1:num_eyes % 左右眼分开处理
     msResultCorrects{k} = msResultCorrect;
 end
 
-% 高斯数据拟合 
+% 高斯数据拟合
 % 得到的是拟合参数
 msResultFit = cell(num_tests,2);
 msResultFits = cell(2,1);
@@ -317,31 +317,29 @@ end
 
 % 画Gaussian拟合的图
 if gaussianPlotAllFlag
-    for k = 1:num_eyes
-        originalDataFlag = false;% 是否显示原始数据绘图
+    for k = 1:num_eyes % 是否显示原始数据绘图
         mode = "select";
         gaussianPlotAll(msResultCorrects{k},msResultFits{k},mode);
     end
 end
 
-%  Gaussian拟合的参数作为标准数据进行处理
+% Gaussian拟合的参数作为标准数据进行处理
 
-% 曲线均值和不确定度
-gaussianMus = zeros(2,1);
-gaussianSigmas = zeros(2,1);
-msResultFitDatas = cell(2,1);
-for k = 1:num_eyes % 左右眼分开处理，用高斯拟合的参数算曲线
-    
-    msResultFitDatas{k} = generateGaussianData(msResultFits{k},xFitDatas);
-end
-if meanGaussianPlotFlag
-    for k = 1:num_eyes % 左右眼分开处理
-        [gaussianMus(k),gaussianSigmas(k)] = gaussianMuSigma(msResultFitDatas{k});
-    end
-end
+% % 曲线均值和不确定度
+% gaussianMus = zeros(2,1);
+% gaussianSigmas = zeros(2,1);
+% msResultFitDatas = cell(2,1);
+% for k = 1:num_eyes % 左右眼分开处理，用高斯拟合的参数算曲线
+% 
+%     msResultFitDatas{k} = generateGaussianData(msResultFits{k},xFitDatas);
+% end
+% if meanGaussianPlotFlag
+%     for k = 1:num_eyes % 左右眼分开处理
+%         [gaussianMus(k),gaussianSigmas(k)] = gaussianMuSigma(msResultFitDatas{k});
+%     end
+% end
 
-
-% % 选定区间
+% 选定区间
 % start_xs = cell(num_eyes,1);
 % end_xs = cell(num_eyes,1);
 % xs = cell(num_eyes,1);
@@ -349,17 +347,15 @@ end
 %     [start_xs{k}, end_xs{k}] = selectRegion(msResultCorrects{k}); % 选择曲线讨论区间
 %     xs{k} = linspace(start_xs{k},end_xs{k})';
 % end
-
+% 
 % % 选定区间规范化数据（高斯数据拟合公式在对应的x区间内的矩阵）
 % for k = 1:num_eyes % 左右眼分开处理
 %     msResultCorrects{k} = generateGaussianData(msResultFits{k},xs{k}); % 选择曲线讨论区间
 %     % 注意，这里替换了msResultCorrects的内容
 % end
-
-
+% 
 % % 画Gaussian拟合的图
 % for k = 1:num_eyes
 %     mode = "select";
 %     gaussianPlotAll(xs{k},msResultFits{k},mode);
 % end
-
