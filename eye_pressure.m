@@ -229,6 +229,15 @@ function num = getOutliers(data)
     num = cell(num_tests*0.95)/2;
 end
 
+    % 算单眼与icare标定的比例系数
+    % mean_data是处理后的单眼高斯拟合的平均值曲线
+    % stdData是用其他眼压测量设备测得的标定值
+    % k是缩放均值曲线的比例系数，使缩放后的峰值和标定值相等
+function k = calibrateProportion(mean_data,stdData)
+    gaussionPeak = max(mean_data);
+    k = stdData/gaussionPeak;
+end
+
 %% 绘图模块
 % 高斯分布集中画在一张图
 function [] = gaussianPlotAll(ori_data,fit_data,mode,originalDataFlag)
