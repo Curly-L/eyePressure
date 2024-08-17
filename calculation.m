@@ -26,6 +26,41 @@ function [fit_y, cross_x] = piecewiseLineFunc(x,y,segments,fts)
     end
 end
 
+% 创建任意类型的分段函数的拟合类型，用做fittype进行曲线拟合
+
+% x原始数据
+% fit_y用于分段原始数据以拟合函数的横坐标值
+% xDuration表示每段的拟合方式
+
+function y = piecewiseLine(x,fit_y,segments,cross_x)
+% PIECEWISELINE   A line made of several pieces
+% that is not continuous.
+
+    y = zeros(size(x));
+    lineNum = length(segments)-1;
+
+    for i = 1:length(x)
+        for j = 1:lineNum
+            if j == lineNum  % Last segment
+                if i <= segments(end)
+                    y(i) = feval(fit_y{j},x(i));
+                    break;
+                end
+            elseif j == 1  % First segment
+                if i >= segments(1) && x(i)<cross_x(1)
+                    y(i) = feval(fit_y{j},x(i));
+                    break;
+                end
+            else  % Intermediate segments
+                if x(i) > cross_x(j-1) && x(i) <= cross_x(j)
+                    y(i) = feval(fit_y{j},x(i));
+                    break;
+                end
+            end
+        end
+    end
+end
+
 %%
 [data] = readmatrix('D:\蓝知医疗\嵌入式\youngs modulus calculation\youngs modulus.xls');
 x = data(:,1);
@@ -37,10 +72,7 @@ y = data(:,2);
 
     [fit_y, cross_x] = piecewiseLineFunc(x,y,segments,fts);
     
-
-    startPoints = {fit_y, segments, cross_x};
-    ft = fittype( 'piecewiseLine(x,fit_y,segments,cross_x)' );
-    func = fit(x,y,ft,'StartPoint',startPoints);
+    func = piecewiseLine(x,fit_y,segments,cross_x);
 
     figure;
-    plot(func,x,y);
+    plot(x,func,'o',x,y,'*');
