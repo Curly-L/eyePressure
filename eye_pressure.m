@@ -323,7 +323,7 @@ a1 = fit_data.a1;
 b1 = fit_data.b1;
 c1 = fit_data.c1;
 Fun = @(x)(a1.*exp(-((x-b1)/c1).^2))-y;
-dots(1) = fzero(Fun,1);
+dots(1) = fzero(Fun,0.5);
 dots(2) = fzero(Fun,4);
 xdots = dots;
 end
