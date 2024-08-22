@@ -217,9 +217,9 @@ end
 
     % 计算单眼高斯曲线的平均值和不确定度
 function [mu,sigma] =  gaussianMuSigma(fit_data)
-    dataSize = size(fit_data{1});
+    dataSize = size(fit_data);
     num_datas = dataSize(1);
-    mu = mean(fit_data,3);
+    mu = mean(fit_data,1);
     stdfit = std(fit_data);
     sigma = sqrt(stdfit/(num_datas));
 end
@@ -287,29 +287,25 @@ function [] = gaussianPlotAll(ori_data,fit_data,mode,originalDataFlag)
     end
 end
 
-% 画单眼的高斯曲线平均值曲线和+-3sigma的曲线
-function [] = meanGaussianPlot(ori_data,fit_data,mode)
-
-end
-
-
+% % 画单眼的高斯曲线平均值曲线和+-3sigma的曲线
+% function [] = meanGaussianPlot(ori_data,fit_data,mode)
+% 
+% end
 
 function [fit_data_aligned] = GaussianFitAlign(fit_data)
 %brief:把高斯cfit类型的一列cell,b1统一成，a1最大的那个cell的b1
 %para:fit_data 第一列是高斯拟合的类型cell
-%para：
-%return:
 %return:b1统一后的cfit类型的一列cell
-[row,~] = size(fit_data);
-gaussian_tempa1 = zeros(row,1);
-for i=1:row
-gaussian_tempa1(i) = fit_data{i}.a1;
-end
-[~,max_ind] = max(gaussian_tempa1);
-for i=1:row
-fit_data{i}.b1 = fit_data{max_ind}.b1;
-end
-fit_data_aligned = fit_data;
+    [row,~] = size(fit_data);
+    gaussian_tempa1 = zeros(row,1);
+    for i=1:row
+    gaussian_tempa1(i) = fit_data{i}.a1;
+    end
+    [~,max_ind] = max(gaussian_tempa1);
+    for i=1:row
+    fit_data{i}.b1 = fit_data{max_ind}.b1;
+    end
+    fit_data_aligned = fit_data;
 end
 
 
@@ -328,32 +324,29 @@ dots(2) = fzero(Fun,4);
 xdots = dots;
 end
 
-
-
-
 function [xdots,x,y,index] = CrossDots_batch(fit_data)
 %brief:给定一列高斯cfit类型，求非最高曲线的最高点的y值，和最高曲线的交点,最高曲线的最高点y值和自己的交点，就是他的最高点
 %para:fit_data 给定cfit类型的一列cell
 %return:xdots 一列cell,每个cell是交点的两个横坐标（横坐标是1x2数组）
 %return:x 最高曲线顶点坐标x
 %return:y 最高曲线顶点坐标y
-%找到a1的最大值
-[row,~] = size(fit_data);
-[a1,b1,~] = getGaussionCoeff(fit_data);
-[max_val,max_ind1] = max(a1);
-y = max_val;
-x = b1(max_ind1);
-index = max_ind1;
-%用小于a1的最大值的a1求交点,求一列
-temp = cell(row,1);
-for i = 1:row
-    if(i == max_ind1)
-        temp{i} = [x,x];
-    else
-        temp{i} = CrossDots(fit_data{max_ind1,1},a1(i));
+    %找到a1的最大值
+    [row,~] = size(fit_data);
+    [a1,b1,~] = getGaussionCoeff(fit_data);
+    [max_val,max_ind1] = max(a1);
+    y = max_val;
+    x = b1(max_ind1);
+    index = max_ind1;
+    %用小于a1的最大值的a1求交点,求一列
+    temp = cell(row,1);
+    for i = 1:row
+        if(i == max_ind1)
+            temp{i} = [x,x];
+        else
+            temp{i} = CrossDots(fit_data{max_ind1,1},a1(i));
+        end
     end
-end
-xdots =temp;
+    xdots =temp;
 end
 
 
@@ -365,15 +358,15 @@ function [coeff_a1,coeff_b1,coeff_c1] = getGaussionCoeff(fit_data)
 %return:a1参数列
 %return:b1参数列
 %return:c1参数列
-[row,~] = size(fit_data);
-coeff_a1 = zeros(row,1);
-coeff_b1 = zeros(row,1);
-coeff_c1 = zeros(row,1);
-for i=1:row
-    coeff_a1(i) = fit_data{i}.a1;
-    coeff_b1(i) = fit_data{i}.b1;
-    coeff_c1(i) = fit_data{i}.c1;
-end
+    [row,~] = size(fit_data);
+    coeff_a1 = zeros(row,1);
+    coeff_b1 = zeros(row,1);
+    coeff_c1 = zeros(row,1);
+    for i=1:row
+        coeff_a1(i) = fit_data{i}.a1;
+        coeff_b1(i) = fit_data{i}.b1;
+        coeff_c1(i) = fit_data{i}.c1;
+    end
 end
 
 function [bias] = getBias(x_list,value)
@@ -381,13 +374,13 @@ function [bias] = getBias(x_list,value)
 %para:x_list 一列cell，每个cell [x1,x2]
 %para：value 最高曲线中轴线的x
 %return:bias 一列cell,每个cell,[x1,x2]应该向左，和向右移动的距离，是正数
-[row,~] = size(x_list);
-bias = cell(row,1);
-for i=1:row
-    bias_left = value-x_list{i,1}(1);
-    bias_right = x_list{i,1}(2) - value;
-    bias{i,1} = [bias_left,bias_right];
-end
+    [row,~] = size(x_list);
+    bias = cell(row,1);
+    for i=1:row
+        bias_left = value - x_list{i,1}(1);
+        bias_right = x_list{i,1}(2) - value;
+        bias{i,1} = [bias_left,bias_right];
+    end
 end
 
 function [] = plotAll(x_list,y_list)
@@ -395,49 +388,49 @@ function [] = plotAll(x_list,y_list)
 %para:x_list 一列cell，每个cell 是一列x坐标数组
 %para：y_list 一列cell，每个cell 是一列y坐标数组
 %return:
-figure;
-xlabel("Distance(mm)");
-ylabel("Force(mmHg)");
-
-[row,~] = size(x_list);
-for i=1:row
-    hold on
-    plot(x_list{i,1},y_list{i,1});
-    legend off
-end
+    figure;
+    xlabel("Distance(mm)");
+    ylabel("Force(mmHg)");
+    
+    [row,~] = size(x_list);
+    for i=1:row
+        hold on
+        plot(x_list{i,1},y_list{i,1});
+        legend off
+    end
 end
 
 function [data,index] = dataInsert(list,value)
 %brief:往list中插入一个值，插入到list中第一个比value大的数的前面
 %para:list 一列数组
-%para：value 插入的值
+%para:value 插入的值
 %return:data 插入数后的数组
 %return:index 插入的位置
-shape = size(list);
-for i=1:shape(1)
-    if(list(i)>value)
-        data = [list(1:i-1)',value,list(i:shape(1))']';
-        index = i;
-        break;
+    shape = size(list);
+    for i=1:shape(1)
+        if(list(i)>value)
+            data = [list(1:i-1)',value,list(i:shape(1))']';
+            index = i;
+            break;
+        end
     end
-end
 end
 
 function [data,index] = dataInsert_batchx(list,value)
 %brief:往list中批量插入一个值，插入到list中第一个比value大的数的前面
 %para:list 一列cell,每个cell是一列数组
-%para：value 插入的值
+%para:value 插入的值
 %return:data 插入数后的一列cell
 %return:index 插入的位置(数组)
-shape = size(list);
-data = cell(shape(1),1);
-index = zeros(shape(1),1);
-data_temp = zeros(shape(1),1);
-for j=1:shape(1)
-    [data_temp,index_temp] = dataInsert(list{j,1},value);
-    data{j} = data_temp;
-    index(j) = index_temp;
-end
+    shape = size(list);
+    data = cell(shape(1),1);
+    index = zeros(shape(1),1);
+    data_temp = zeros(shape(1),1);
+    for j=1:shape(1)
+        [data_temp,index_temp] = dataInsert(list{j,1},value);
+        data{j} = data_temp;
+        index(j) = index_temp;
+    end
 end
 
 function [data] = dataInsert_Index(list,value,ind)
@@ -446,8 +439,8 @@ function [data] = dataInsert_Index(list,value,ind)
 %para：value 插入的值
 %para：ind 插入的值
 %return:data 插入数后的数组
-shape = size(list);    
-data = [list(1:ind-1)',value,list(ind:shape(1))']';
+    shape = size(list);    
+    data = [list(1:ind-1)',value,list(ind:shape(1))']';
 end
 
 
@@ -458,37 +451,62 @@ function [data] = dataInsert_batchy(list,value,index)
 %para：index 插入的位置（数组）
 %return:data 插入数后的一列cell
 %note:后期value可能也改成数组形式，现在是一个值
-shape = size(list);
-data = cell(shape(1),1);
-for j=1:shape(1)
-data{j,1} = dataInsert_Index(list{j,1},value,index(j));
-end
+    shape = size(list);
+    data = cell(shape(1),1);
+    for j=1:shape(1)
+        data{j,1} = dataInsert_Index(list{j,1},value,index(j));
+    end
 end
 
 function  data = getCoeff(list)
 %brief获得一个数组的最大，最小，平均，标准差
 %para:list 一列数组
 %return:懒得写了
-[max_val,~] = max(list); 
-[min_val,~] = min(list);
-mu = mean(list);
-sigma = std(list);
-data = [max_val,min_val,mu,sigma];
+    [max_val,~] = max(list); 
+    [min_val,~] = min(list);
+    mu = mean(list);
+    sigma = std(list);
+    data = [max_val,min_val,mu,sigma];
+end
+
+function data_new = newCell2Mat(x,yfit_new)
+% 将单眼cell数组转换成[num_tests,num_datas]的double数组
+    testSize = size(yfit_new);
+    dataSize = size(x);
+    num_tests = testSize(1);
+    num_datas = dataSize(1);
+    data_new = zeros(num_tests,num_datas);
+    for i = 1:num_tests
+        data_new(i,:) = feval(yfit_new{i,1},x);
+    end
+end
+
+    % 算单眼与icare标定的比例系数
+    % mean_data是处理后的单眼高斯拟合的平均值曲线
+    % stdData是用其他眼压测量设备测得的标定值
+    % k是缩放均值曲线的比例系数，使缩放后的峰值和标定值相等
+function k = calibrateProportion(mean_data,stdData)
+    gaussionPeak = 5*max(mean_data);
+    k = stdData/gaussionPeak;
 end
 
 %% 主函数，程序入口
 
 % 工作路径
-%file_dir_noise = 'D:\蓝知医疗\测试数据\空跑';
-file_dir_noise = 'D:\1研究生阶段\1眼压prototype\眼压数据\空跑数据';
+file_dir_noise = 'D:\蓝知医疗\测试数据\空跑';
 msResult_noise = getNoiseData(file_dir_noise);
 [mu,sigma] = getMuSig(msResult_noise); % 计算空跑平均值和标准差
 
-%file_dir = 'D:\蓝知医疗\测试数据\zcxL17R17';
-%file_dir = 'D:\1研究生阶段\1眼压prototype\眼压数据\kz(icare测不出来眼睛睁不开)\kz(icare测不出来眼睛睁不开)\0802';
-%file_dir = 'D:\1研究生阶段\1眼压prototype\眼压数据\zcxL17R17(1)\zcx';
-%file_dir = 'D:\1研究生阶段\1眼压prototype\眼压数据\111laL22R23\laL22R23';
-file_dir = 'D:\1研究生阶段\1眼压prototype\眼压数据\111lpjL16R13(1)\lpjL16R13';
+% file_dir = 'D:\蓝知医疗\测试数据\kz(icare测不出来眼睛睁不开)_次数命名';
+% excludeFiles = {'情况说明.xlsx'};
+% file_dir = 'D:\蓝知医疗\测试数据\laL22R23';
+% excludeFiles = {'0803李昂情况说明.xlsx'};
+% file_dir = 'D:\蓝知医疗\测试数据\lffL15R12';
+% excludeFiles = {'测试情况说明.xlsx'};
+% file_dir = 'D:\蓝知医疗\测试数据\lpjL16R13';
+% excludeFiles = {'0731-0801测试数据说明.xlsx'};
+file_dir = 'D:\蓝知医疗\测试数据\zcxL17R17';
+excludeFiles = {'zcx测试情况统计表.xlsx'};
 msResult = getEyesData(file_dir); % 得到左右眼眼压，行-测量次数，列-被测眼睛
 [num_tests,num_eyes] = size(msResult);
 
@@ -540,7 +558,7 @@ bias = cell(2,1);
 bias{1,1} = getBias(cross_x{1,1},x1);
 bias{2,1} = getBias(cross_x{2,1},x2);
 %x移动
-%移动步骤之一，创建xy
+%移动步骤之一，创建对齐后的xy
 x_move = 0.4:0.005:6.4;
 x_move = x_move';
 [row,~] = size(alligned_fit{1,1});
@@ -548,9 +566,8 @@ yfit = cell(row,1);
 yfit1 = cell(2,1);
 xfit = cell(row,1);
 xfit1 = cell(2,1);
-for i= 1:num_eyes
+for i= 1:num_eyes %yfit和xfit作为临时存储，储存单次测量拟合后的数据
     for j=1:row
-         %yfit{j,1} = 5*feval(alligned_fit{i,1}{j,1}, x_move);
          yfit{j,1} = feval(alligned_fit{i,1}{j,1}, x_move);
          xfit{j,1} = x_move;
     end
@@ -572,16 +589,15 @@ for k = 1:num_eyes
     end
 end
 
-%移动完了之后，加一个最高点重新拟合高斯函数
+%移动完了之后，加一个最高点
 len1 = length(xfit1{1,1});
 insert_index = cell(2,1);
 for j = 1:num_eyes
         [xfit1{j,1},insert_index{j}] = dataInsert_batchx(xfit1{j,1},xmax(j));
-        %yfit1{j,1} = dataInsert_batchy(yfit1{j,1},5*ymax(j),insert_index{j});
         yfit1{j,1} = dataInsert_batchy(yfit1{j,1},ymax(j),insert_index{j});
 end
 
-% 高斯数据重新拟合 
+% 高斯数据重新拟合
 fitData_new = cell(num_tests,2);
 fitData_new1 = cell(2,1);
 msResultFit_new = cell(num_tests,2);
@@ -594,7 +610,7 @@ for j =1:num_eyes
     fitData_new1{j,1} = fitData_new;
 end
 
-for k = 1:num_eyes % 拟合新的值
+for k = 1:num_eyes
     msResultFit_new  = fitData(fitData_new1{k});
     msResultFits_new{k} = msResultFit_new;
 end
@@ -609,19 +625,17 @@ coeff{1,1} = coeff_temp;
 coeff_temp = getCoeff(a2)';
 coeff{2,1} = coeff_temp;
 
-%
-% 画Gaussian拟合的图
+%% 画Gaussian拟合的图
 if gaussianPlotAllFlag
     for k = 1:num_eyes
-        originalDataFlag = false;% 是否显示原始数据绘图
         mode = "select";
         gaussianPlotAll(msResultCorrects{k},msResultFits{k},mode);
     end
 end
+
 % 画对齐后的图
 if gaussianPlotAllFlag
     for k = 1:num_eyes
-        originalDataFlag = false;% 是否显示原始数据绘图
         mode = "select";
         gaussianPlotAll(msResultCorrects{k},alligned_fit{k},mode);
     end
@@ -636,50 +650,77 @@ end
 % 画新拟合的图
 if gaussianPlotAllFlag
     for k = 1:num_eyes
-        originalDataFlag = false;% 是否显示原始数据绘图
         mode = "select";
         gaussianPlotAll(xfit2{k},msResultFits_new{k},mode);
     end
 end
-%  Gaussian拟合的参数作为标准数据进行处理
 
-% 曲线均值和不确定度
-% gaussianMus = zeros(2,1);
-% gaussianSigmas = zeros(2,1);
-% msResultFitDatas = cell(2,1);
-% for k = 1:num_eyes % 左右眼分开处理，用高斯拟合的参数算曲线
-%     
-%     msResultFitDatas{k} = generateGaussianData(msResultFits{k},xFitDatas);
-% end
-% if meanGaussianPlotFlag
-%     for k = 1:num_eyes % 左右眼分开处理
-%         [gaussianMus(k),gaussianSigmas(k)] = gaussianMuSigma(msResultFitDatas{k});
-%     end
-% end
+%% cell转mat，计算均值和不确定度
+xfit_new = cell(2,1);
+mu_new = cell(2,1);
+sigma_new = cell(2,1);
+xfit_new{1} = msResultCorrects{1}{ind1,1};
+xfit_new{2} = msResultCorrects{2}{ind2,1};
+data_new = cell(2,1);
+p = zeros(2,1);
+stdData = [17,17];
 
+if gaussianPlotAllFlag
+    for k = 1:num_eyes
+        data_new{k} = newCell2Mat(xfit_new{k},msResultFits_new{k});
+        [mu_new{k},sigma_new{k}] =  gaussianMuSigma(data_new{k});
+        figure;
+        plot(xfit_new{k},5*mu_new{k},xfit_new{k},5*(mu_new{k}+sigma_new{k}),xfit_new{k},5*(mu_new{k}-sigma_new{k}));
+        yline(stdData(k));
+        xlabel("Distance(mm)");
+        ylabel("Force(mmHg)");
+        if k==1
+            title("left eye");
+        else 
+            title("right eye");
+        end
+    end
+end
 
-% % 选定区间
-% start_xs = cell(num_eyes,1);
-% end_xs = cell(num_eyes,1);
-% xs = cell(num_eyes,1);
-% for k = 1:num_eyes % 左右眼分开处理
-%     [start_xs{k}, end_xs{k}] = selectRegion(msResultCorrects{k}); % 选择曲线讨论区间
-%     xs{k} = linspace(start_xs{k},end_xs{k})';
-% end
-
-% % 选定区间规范化数据（高斯数据拟合公式在对应的x区间内的矩阵）
-% for k = 1:num_eyes % 左右眼分开处理
-%     msResultCorrects{k} = generateGaussianData(msResultFits{k},xs{k}); % 选择曲线讨论区间
-%     % 注意，这里替换了msResultCorrects的内容
-% end
-
-
-% % 画Gaussian拟合的图
-% for k = 1:num_eyes
-%     mode = "select";
-%     gaussianPlotAll(xs{k},msResultFits{k},mode);
-% end
-
-%end
+% %  Gaussian拟合的参数作为标准数据进行处理
+% 
+% % 曲线均值和不确定度
+% % gaussianMus = zeros(2,1);
+% % gaussianSigmas = zeros(2,1);
+% % msResultFitDatas = cell(2,1);
+% % for k = 1:num_eyes % 左右眼分开处理，用高斯拟合的参数算曲线
+% %     
+% %     msResultFitDatas{k} = generateGaussianData(msResultFits{k},xFitDatas);
+% % end
+% % if meanGaussianPlotFlag
+% %     for k = 1:num_eyes % 左右眼分开处理
+% %         [gaussianMus(k),gaussianSigmas(k)] = gaussianMuSigma(msResultFitDatas{k});
+% %     end
+% % end
+% 
+% 
+% % % 选定区间
+% % start_xs = cell(num_eyes,1);
+% % end_xs = cell(num_eyes,1);
+% % xs = cell(num_eyes,1);
+% % for k = 1:num_eyes % 左右眼分开处理
+% %     [start_xs{k}, end_xs{k}] = selectRegion(msResultCorrects{k}); % 选择曲线讨论区间
+% %     xs{k} = linspace(start_xs{k},end_xs{k})';
+% % end
+% 
+% % % 选定区间规范化数据（高斯数据拟合公式在对应的x区间内的矩阵）
+% % for k = 1:num_eyes % 左右眼分开处理
+% %     msResultCorrects{k} = generateGaussianData(msResultFits{k},xs{k}); % 选择曲线讨论区间
+% %     % 注意，这里替换了msResultCorrects的内容
+% % end
+% 
+% 
+% % % 画Gaussian拟合的图
+% % for k = 1:num_eyes
+% %     mode = "select";
+% %     gaussianPlotAll(xs{k},msResultFits{k},mode);
+% % end
+% 
+% %end
 
 
