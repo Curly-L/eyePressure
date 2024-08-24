@@ -610,9 +610,18 @@ for j =1:num_eyes
     fitData_new1{j,1} = fitData_new;
 end
 
-for k = 1:num_eyes
-    msResultFit_new  = fitData(fitData_new1{k});
-    msResultFits_new{k} = msResultFit_new;
+% for k = 1:num_eyes
+%     msResultFit_new  = fitData(fitData_new1{k});
+%     msResultFits_new{k} = msResultFit_new;
+% end
+
+% 
+func = @(c,x) a*exp-(x-b)^2/(2*c^2);
+for j = 1:num_eyes
+    a = ymax(j);
+    b = xmax(j);
+    x0 = [b,a];
+    c = lsqcurvefit(func,x0,xfit1{j},fitData_new1{j});
 end
 
 [a1,b1,~] = getGaussionCoeff(msResultFits_new{1,1});
